@@ -7,6 +7,9 @@ Provide fast import import. From source is provided first from pkg up collection
 
 ![demo](/assets/demo.gif)
 
+## Usage
+通过输入 `_` ，选择 _import-prompter, 选择 source 后，按下 tab 跳回 import 的地方，按空格选择导出的依赖。
+
 ## :coffee:
 
 [buy me a cup of coffee](https://github.com/Simon-He95/sponsor)
