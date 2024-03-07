@@ -52,7 +52,6 @@ function getPathDep(url: string) {
   urlCache.set(url, result)
   const stop = watchFiles(url,{
     onChange(){
-      debugger
       const newPkg = require(url)
       const newResult = Object.assign([], newPkg.devDependencies ? Object.keys(newPkg.devDependencies) : undefined, newPkg.dependencies ? Object.keys(newPkg.dependencies) : undefined)
       urlCache.set(url, newResult)
