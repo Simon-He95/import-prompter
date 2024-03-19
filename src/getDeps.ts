@@ -50,16 +50,16 @@ function getPathDep(url: string) {
   const pkg = require(url)
   const result = Object.assign([], pkg.devDependencies ? Object.keys(pkg.devDependencies) : undefined, pkg.dependencies ? Object.keys(pkg.dependencies) : undefined)
   urlCache.set(url, result)
-  const stop = watchFiles(url,{
-    onChange(){
+  const stop = watchFiles(url, {
+    onChange() {
       const newPkg = require(url)
       const newResult = Object.assign([], newPkg.devDependencies ? Object.keys(newPkg.devDependencies) : undefined, newPkg.dependencies ? Object.keys(newPkg.dependencies) : undefined)
       urlCache.set(url, newResult)
     },
-    onDelete(){
+    onDelete() {
       urlCache.delete(url)
       stop()
-    }
+    },
   })
   return result
 }
