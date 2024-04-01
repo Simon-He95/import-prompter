@@ -3,7 +3,7 @@
   "name": "import-prompter",
   "displayName": "import-prompter",
   "version": "0.0.2",
-  "packageManager": "pnpm@8.15.5",
+  "packageManager": "pnpm@8.15.6",
   "description": "import-prompter",
   "author": "Simon He <https://github.com/Simon-He95>",
   "license": "MIT",

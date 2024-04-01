@@ -4,55 +4,52 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-importers:
-
-  .:
-    devDependencies:
-      '@antfu/eslint-config':
-        specifier: ^2.7.0
-        version: 2.8.0(@vue/compiler-sfc@3.4.21)(eslint@8.57.0)(typescript@5.3.2)(vitest@1.4.0)
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.11.25
-      '@types/vscode':
-        specifier: ^1.84.2
-        version: 1.84.2
-      '@vscode-use/utils':
-        specifier: ^0.0.91
-        version: 0.0.91
-      bumpp:
-        specifier: ^9.2.0
-        version: 9.4.0
-      eslint:
-        specifier: ^8.54.0
-        version: 8.57.0
-      esno:
-        specifier: ^0.16.3
-        version: 0.16.3
-      find-up:
-        specifier: ^7.0.0
-        version: 7.0.0
-      pnpm:
-        specifier: ^8.10.5
-        version: 8.10.5
-      rimraf:
-        specifier: ^5.0.0
-        version: 5.0.5
-      tsup:
-        specifier: ^8.0.0
-        version: 8.0.2(typescript@5.3.2)
-      typescript:
-        specifier: ^5.3.2
-        version: 5.3.2
-      vite:
-        specifier: ^5.0.0
-        version: 5.1.5(@types/node@20.11.25)
-      vitest:
-        specifier: ^1.0.0
-        version: 1.4.0(@types/node@20.11.25)
-      vsce:
-        specifier: ^2.15.0
-        version: 2.15.0
+devDependencies:
+  '@antfu/eslint-config':
+    specifier: ^2.7.0
+    version: 2.8.0(@vue/compiler-sfc@3.4.21)(eslint@8.57.0)(typescript@5.3.2)(vitest@1.4.0)
+  '@types/node':
+    specifier: ^20.0.0
+    version: 20.11.25
+  '@types/vscode':
+    specifier: ^1.84.2
+    version: 1.84.2
+  '@vscode-use/utils':
+    specifier: ^0.0.91
+    version: 0.0.91
+  bumpp:
+    specifier: ^9.2.0
+    version: 9.4.0
+  eslint:
+    specifier: ^8.54.0
+    version: 8.57.0
+  esno:
+    specifier: ^0.16.3
+    version: 0.16.3
+  find-up:
+    specifier: ^7.0.0
+    version: 7.0.0
+  pnpm:
+    specifier: ^8.10.5
+    version: 8.10.5
+  rimraf:
+    specifier: ^5.0.0
+    version: 5.0.5
+  tsup:
+    specifier: ^8.0.0
+    version: 8.0.2(typescript@5.3.2)
+  typescript:
+    specifier: ^5.3.2
+    version: 5.3.2
+  vite:
+    specifier: ^5.0.0
+    version: 5.1.5(@types/node@20.11.25)
+  vitest:
+    specifier: ^1.0.0
+    version: 1.4.0(@types/node@20.11.25)
+  vsce:
+    specifier: ^2.15.0
+    version: 2.15.0
 
 packages:
 
