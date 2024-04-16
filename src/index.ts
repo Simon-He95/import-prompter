@@ -17,7 +17,7 @@ export function activate(context: ExtensionContext) {
       return [
         createCompletionItem({
           content,
-          snippet: `import\${2: } from '\${1|${scripts?.join(',')}|}'`,
+          snippet: `import \${2:module} from '\${1|${scripts?.join(',')}|}'`,
           command: {
             command: 'editor.action.triggerSuggest', // 这个命令会触发代码提示
             title: 'Trigger Suggest',
