@@ -18,8 +18,8 @@ importers:
         specifier: ^1.84.2
         version: 1.84.2
       '@vscode-use/utils':
-        specifier: ^0.0.91
-        version: 0.0.91
+        specifier: ^0.0.99
+        version: 0.0.99
       bumpp:
         specifier: ^9.2.0
         version: 9.4.0
@@ -579,8 +579,8 @@ packages:
   '@vitest/utils@1.5.1':
     resolution: {integrity: sha512-92pE17bBXUxA0Y7goPcvnATMCuq4NQLOmqsG0e2BtzRi7KLwZB5jpiELi/8ybY8IQNWemKjSD5rMoO7xTdv8ug==}
 
-  '@vscode-use/utils@0.0.91':
-    resolution: {integrity: sha512-L0BFtZqxzGLe//prPg98pNFYicsexXDZM4JWLfr3BmlY4RcsmXtm7Iqtre5s3lD+Fg0mBeNm7lkDAnq59RDoCg==}
+  '@vscode-use/utils@0.0.99':
+    resolution: {integrity: sha512-HyIr6xbIeJUIFfZDiBkRtfySIw9LeDZM4Q2+DPGIeZVj+waJ8QRRkwHP7NogPH8N6ZSDjNqVfES0sVv/6k+j+w==}
     engines: {vscode: ^1.77.0}
 
   '@vue/compiler-core@3.4.21':
@@ -659,6 +659,7 @@ packages:
 
   are-we-there-yet@1.1.7:
     resolution: {integrity: sha512-nxwy40TuMiUGqMyRHgCSWZ9FM4VAoRP4xUYSTv5ImRog+h9yISPbVH7H8fASCIzYn9wlEv4zvFL7uKDMCFQm3g==}
+    deprecated: This package is no longer supported.
 
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
@@ -1421,6 +1422,7 @@ packages:
 
   gauge@2.7.4:
     resolution: {integrity: sha512-14x4kjc6lkD3ltw589k0NrPD6cCNTD6CWoVUNpB85+DrtONoZn+Rug6xZU5RvSC4+TZPxA5AnBibQYAvZn41Hg==}
+    deprecated: This package is no longer supported.
 
   get-caller-file@2.0.5:
     resolution: {integrity: sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==}
@@ -1879,6 +1881,7 @@ packages:
 
   npmlog@4.1.2:
     resolution: {integrity: sha512-2uUqazuKlTaSI/dC8AzicUck7+IrEaOnN/e0jd3Xtt1KcGpwx30v50mL7oPyr/h9bL3E4aZccVwpwP+5W9Vjkg==}
+    deprecated: This package is no longer supported.
 
   nth-check@2.0.1:
     resolution: {integrity: sha512-it1vE95zF6dTT9lBsYbxvqh0Soy4SPowchj0UBGj/V6cTPnXXtQOPUbhZ6CmGzAD/rW22LQK6E96pcdJXk4A4w==}
@@ -3203,7 +3206,7 @@ snapshots:
       loupe: 2.3.7
       pretty-format: 29.7.0
 
-  '@vscode-use/utils@0.0.91': {}
+  '@vscode-use/utils@0.0.99': {}
 
   '@vue/compiler-core@3.4.21':
     dependencies:
