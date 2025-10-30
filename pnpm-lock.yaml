@@ -19,7 +19,7 @@ importers:
         version: 1.104.0
       '@vscode-use/utils':
         specifier: ^0.1.39
-        version: 0.1.59
+        version: 0.1.60
       '@vscode/vsce':
         specifier: ^3.2.1
         version: 3.6.2
@@ -755,8 +755,8 @@ packages:
   '@vitest/utils@1.6.0':
     resolution: {integrity: sha512-21cPiuGMoMZwiOHa2i4LXkMkMkCGzA+MVFV70jRwHo95dL4x/ts5GZhML1QWuy7yfp3WzK3lRvZi3JnXTYqrBw==}
 
-  '@vscode-use/utils@0.1.59':
-    resolution: {integrity: sha512-jNlHll6/v7tmO+wdaTNvmLGjyEmciaLa13lSPWCcl4R0NMogCLJtZukD5OHdBx7BpIrCNlyeGj77opqRYEwqAQ==}
+  '@vscode-use/utils@0.1.60':
+    resolution: {integrity: sha512-y5zC8CGKDhOE4Z1im8jD7iooGjhzHbgtGWVq2bRRtO0zcP8PrCy6THcG9BHkHWC/JH+GGW9f7Ge5wbqvakaDZQ==}
     engines: {vscode: ^1.92.0}
 
   '@vscode/vsce-sign-alpine-arm64@2.0.6':
@@ -4024,7 +4024,7 @@ snapshots:
       loupe: 2.3.7
       pretty-format: 29.7.0
 
-  '@vscode-use/utils@0.1.59':
+  '@vscode-use/utils@0.1.60':
     dependencies:
       alien-signals: 1.0.13
 
