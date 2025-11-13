@@ -1,46 +1,43 @@
-name: Test
+name: CI
 
 on:
   push:
     branches:
-      - master
-
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
-    timeout-minutes: 10
-
-    strategy:
-      matrix:
-        node_version: [14.x, 16.x]
-        os: [ubuntu-latest, windows-latest]
-      fail-fast: false
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-
-      - name: Set node version to ${{ matrix.node_version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node_version }}
-          cache: pnpm
+          node-version: 20
 
-      - name: Install
-        run: pnpm i
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
-      - name: Build
-        run: pnpm run build
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Test
-        run: pnpm run test
+      - name: Typecheck
+        run: pnpm typecheck
 
       - name: Lint
-        run: pnpm run lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test -- --run
