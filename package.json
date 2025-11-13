@@ -2,7 +2,7 @@
   "publisher": "simonhe",
   "name": "import-prompter",
   "displayName": "import-prompter",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "packageManager": "pnpm@9.15.9",
   "description": "import-prompter",
   "author": "Simon He <https://github.com/Simon-He95>",
