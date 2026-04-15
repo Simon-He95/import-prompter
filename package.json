@@ -84,7 +84,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.2.0",
-    "@types/node": "^20.19.25",
+    "@types/node": "^24.0.0",
     "@types/vscode": "^1.77.0",
     "@vscode-use/utils": "^0.1.60",
     "@vscode/vsce": "^3.7.0",
