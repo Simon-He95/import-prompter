@@ -1,7 +1,7 @@
 import type { Disposable, ExtensionContext } from 'vscode'
 
-import { createCompletionItem, getLineText, registerCompletionItemProvider } from '@vscode-use/utils'
-import { workspace } from 'vscode'
+import { createCompletionItem, registerCompletionItemProvider } from '@vscode-use/utils'
+import { Range, workspace } from 'vscode'
 import { clearAllCaches, getScripts } from './getDeps'
 
 function getConfiguration() {
@@ -23,37 +23,49 @@ function getConfiguration() {
 }
 
 export function activate(context: ExtensionContext) {
-  const disposes: Disposable[] = []
-  const config = getConfiguration()
-  const content = `${config.trigger}import-prompter`
+  let provider: Disposable | undefined
 
-  disposes.push(registerCompletionItemProvider(config.supportedLanguages, async (_, position) => {
-    const lineText = getLineText(position.line)
+  const registerProvider = () => {
+    provider?.dispose()
 
-    // 早期返回，避免不必要的依赖加载
-    if (!lineText || !content.startsWith(lineText))
-      return
+    const config = getConfiguration()
 
-    const scripts = await getScripts()
-    if (!scripts || scripts.length === 0)
-      return
+    provider = registerCompletionItemProvider(config.supportedLanguages, async (document, position) => {
+      const linePrefix = document.lineAt(position.line).text.slice(0, position.character)
+      const trimmedLinePrefix = linePrefix.trimStart()
 
-    // 过滤排除的包（支持通配符 *）
-    const filteredScripts = scripts.filter((pkg: string) => !isExcluded(pkg, config.excludePackages))
-    if (filteredScripts.length === 0)
-      return
+      // 早期返回，避免不必要的依赖加载
+      if (!trimmedLinePrefix || !trimmedLinePrefix.startsWith(config.trigger))
+        return
 
-    return [
-      createCompletionItem({
-        content,
-        snippet: `import \${2:module} from '\${1|${filteredScripts.join(',')}|}'`,
-        command: {
-          command: 'editor.action.triggerSuggest',
-          title: 'Trigger Suggest',
-        },
-      }),
-    ]
-  }, [config.trigger]))
+      const query = trimmedLinePrefix.slice(config.trigger.length).toLowerCase()
+      const startCharacter = linePrefix.length - trimmedLinePrefix.length
+      const replacementRange = new Range(position.line, startCharacter, position.line, position.character)
+
+      const candidates = await getScripts()
+      if (!candidates || candidates.length === 0)
+        return
+
+      // 过滤排除的包（支持通配符 *）
+      const filteredCandidates = candidates
+        .filter(candidate => !isExcluded(candidate.name, config.excludePackages))
+        .filter(candidate => !query || candidate.name.toLowerCase().includes(query))
+      if (filteredCandidates.length === 0)
+        return
+
+      return filteredCandidates.map(candidate =>
+        createCompletionItem({
+          content: candidate.name,
+          detail: candidate.source,
+          filterText: `${config.trigger}${candidate.name}`,
+          range: replacementRange,
+          snippet: `import \${1:module} from '${candidate.name}'`,
+          sortText: candidate.name,
+        }))
+    }, [config.trigger])
+  }
+
+  registerProvider()
 
   // 监听配置变化
   context.subscriptions.push(
@@ -61,11 +73,16 @@ export function activate(context: ExtensionContext) {
       if (e.affectsConfiguration('import-prompter')) {
         // 清理缓存，强制重新加载
         clearAllCaches()
+        registerProvider()
       }
     }),
   )
 
-  context.subscriptions.push(...disposes)
+  context.subscriptions.push({
+    dispose() {
+      provider?.dispose()
+    },
+  })
 }
 
 export function deactivate() {

@@ -1,21 +1,27 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
-import { getCurrentFileUrl, getRootPath, watchFiles } from '@vscode-use/utils'
+import { getCurrentFileUrl, getRootPath, watchFile } from '@vscode-use/utils'
 import { findUp } from 'find-up'
-import { workspace } from 'vscode'
+import { RelativePattern, workspace } from 'vscode'
 
-export const rootCacheMap = new Map()
-let currentRoot: string | undefined
+export type ImportCandidateSource = 'workspace' | 'dependency' | 'peerDependency' | 'devDependency'
+
+export interface ImportCandidate {
+  name: string
+  source: ImportCandidateSource
+}
+
+const sourcePriority: Record<ImportCandidateSource, number> = {
+  workspace: 0,
+  dependency: 1,
+  peerDependency: 2,
+  devDependency: 3,
+}
+
 async function findCurrentRoot() {
   const cwd = getCurrentFileUrl()
   if (!cwd)
     return
-
-  if (rootCacheMap.has(cwd))
-    return rootCacheMap.get(cwd)
-
-  if (currentRoot && cwd.startsWith(currentRoot))
-    return currentRoot
 
   const pkg = await findUp('package.json', {
     cwd,
@@ -24,10 +30,20 @@ async function findCurrentRoot() {
   if (!pkg)
     return
 
-  currentRoot = path.dirname(pkg)
-  rootCacheMap.set(cwd, currentRoot)
-
+  const currentRoot = path.dirname(pkg)
   return currentRoot
+}
+
+function mergeCandidates(map: Map<string, ImportCandidate>, items: ImportCandidate[]) {
+  for (const item of items) {
+    const existing = map.get(item.name)
+    if (!existing || sourcePriority[item.source] < sourcePriority[existing.source])
+      map.set(item.name, item)
+  }
+}
+
+function sortCandidates(candidates: Iterable<ImportCandidate>) {
+  return Array.from(candidates).sort((a, b) => a.name.localeCompare(b.name))
 }
 
 export async function getScripts() {
@@ -35,10 +51,10 @@ export async function getScripts() {
   const root = getRootPath()
   if (!currentRoot || !root)
     return
-  const results: string[] = []
-  const add = (arr?: string[]) => {
+  const results = new Map<string, ImportCandidate>()
+  const add = (arr?: ImportCandidate[]) => {
     if (arr && arr.length)
-      results.push(...arr)
+      mergeCandidates(results, arr)
   }
 
   if (currentRoot === root) {
@@ -53,14 +69,13 @@ export async function getScripts() {
   const workspacePkgs = await getWorkspacePackages(root)
   add(workspacePkgs)
 
-  // dedupe + sort
-  return Array.from(new Set(results)).sort()
+  return sortCandidates(results.values())
 }
 
-export const urlCache = new Map()
-const fileWatchers = new Map()
-const workspaceCache = new Map<string, string[]>()
-let workspaceFilePath: string | undefined
+export const urlCache = new Map<string, ImportCandidate[]>()
+const fileWatchers = new Map<string, () => void>()
+const workspaceCache = new Map<string, ImportCandidate[]>()
+const workspaceFilePaths = new Map<string, string | undefined>()
 
 // 防抖函数
 function debounce<T extends (...args: any[]) => void>(fn: T, delay: number): T {
@@ -83,35 +98,36 @@ function readPackageJson(url: string) {
   }
 }
 
-function extractDependencies(pkg: any): string[] {
+function createCandidates(names: string[], source: ImportCandidateSource): ImportCandidate[] {
+  return names.map(name => ({ name, source }))
+}
+
+function extractDependencies(pkg: any): ImportCandidate[] {
   if (!pkg)
     return []
 
   const config = workspace.getConfiguration('import-prompter')
   const includePeerDeps = config.get<boolean>('includePeerDependencies', true)
 
-  const deps = new Set<string>()
+  const candidates = new Map<string, ImportCandidate>()
 
-  // 收集所有依赖类型
-  if (pkg.dependencies)
-    Object.keys(pkg.dependencies).forEach(dep => deps.add(dep))
+  mergeCandidates(candidates, createCandidates(Object.keys(pkg.devDependencies || {}), 'devDependency'))
 
-  if (pkg.devDependencies)
-    Object.keys(pkg.devDependencies).forEach(dep => deps.add(dep))
+  if (includePeerDeps)
+    mergeCandidates(candidates, createCandidates(Object.keys(pkg.peerDependencies || {}), 'peerDependency'))
 
-  if (includePeerDeps && pkg.peerDependencies)
-    Object.keys(pkg.peerDependencies).forEach(dep => deps.add(dep))
+  mergeCandidates(candidates, createCandidates(Object.keys(pkg.dependencies || {}), 'dependency'))
 
-  return Array.from(deps).sort()
+  return sortCandidates(candidates.values())
 }
 
-function getPathDep(url: string) {
+function getPathDep(url: string): ImportCandidate[] {
   url = path.join(url, 'package.json')
   if (!existsSync(url))
     return []
 
   if (urlCache.has(url))
-    return urlCache.get(url)
+    return urlCache.get(url) ?? []
 
   const pkg = readPackageJson(url)
   const result = extractDependencies(pkg)
@@ -126,7 +142,7 @@ function getPathDep(url: string) {
       urlCache.set(url, newResult)
     }, 300)
 
-    const stop = watchFiles(url, {
+    const stop = watchFile(url, {
       onChange: debouncedUpdate,
       onDelete() {
         urlCache.delete(url)
@@ -142,54 +158,109 @@ function getPathDep(url: string) {
 
 export function clearAllCaches() {
   urlCache.clear()
-  rootCacheMap.clear()
   workspaceCache.clear()
+  workspaceFilePaths.clear()
   // 停止所有文件监听
   fileWatchers.forEach(stop => stop())
   fileWatchers.clear()
 }
 
-async function getWorkspacePackages(root: string): Promise<string[] | undefined> {
+function getWorkspacePackageWatcherKey(workspaceFilePath: string) {
+  return `${workspaceFilePath}:packages`
+}
+
+function stopWatcher(key: string) {
+  const stop = fileWatchers.get(key)
+  if (!stop)
+    return
+
+  stop()
+  fileWatchers.delete(key)
+}
+
+function watchWorkspacePackageFiles(workspaceFilePath: string, patterns: string[]) {
+  const watcherKey = getWorkspacePackageWatcherKey(workspaceFilePath)
+  if (fileWatchers.has(watcherKey))
+    return
+
+  const wsRoot = path.dirname(workspaceFilePath)
+  const includePatterns = patterns.filter(pattern => pattern && !pattern.startsWith('!'))
+  if (!includePatterns.length)
+    return
+
+  const invalidateCache = debounce(() => {
+    workspaceCache.delete(workspaceFilePath)
+  }, 300)
+
+  const watchers = includePatterns.map(pattern => workspace.createFileSystemWatcher(
+    new RelativePattern(wsRoot, `${pattern}/package.json`),
+  ))
+
+  for (const watcher of watchers) {
+    watcher.onDidCreate(invalidateCache)
+    watcher.onDidChange(invalidateCache)
+    watcher.onDidDelete(invalidateCache)
+  }
+
+  fileWatchers.set(watcherKey, () => {
+    watchers.forEach(watcher => watcher.dispose())
+  })
+}
+
+async function getWorkspacePackages(root: string): Promise<ImportCandidate[] | undefined> {
   // find pnpm-workspace.yaml upward from root
-  if (!workspaceFilePath)
+  let workspaceFilePath = workspaceFilePaths.get(root)
+  if (!workspaceFilePath) {
     workspaceFilePath = await findUp('pnpm-workspace.yaml', { cwd: root })
+    if (workspaceFilePath)
+      workspaceFilePaths.set(root, workspaceFilePath)
+  }
 
   if (!workspaceFilePath)
     return
 
   if (workspaceCache.has(workspaceFilePath))
-    return workspaceCache.get(workspaceFilePath)
+    return workspaceCache.get(workspaceFilePath) ?? []
 
   const content = readFileSync(workspaceFilePath, 'utf-8')
   const patterns = parsePnpmWorkspace(content)
   if (!patterns.length) {
+    stopWatcher(getWorkspacePackageWatcherKey(workspaceFilePath))
     workspaceCache.set(workspaceFilePath, [])
     return []
   }
 
+  watchWorkspacePackageFiles(workspaceFilePath, patterns)
+
   const wsRoot = path.dirname(workspaceFilePath)
   const dirs = matchDirsByGlobs(wsRoot, patterns)
-  const names: string[] = []
+  const candidates = new Map<string, ImportCandidate>()
   for (const dir of dirs) {
     const pkgPath = path.join(wsRoot, dir, 'package.json')
     if (!existsSync(pkgPath))
       continue
     const pkg = readPackageJson(pkgPath)
     if (pkg?.name)
-      names.push(pkg.name as string)
+      mergeCandidates(candidates, [{ name: pkg.name as string, source: 'workspace' }])
   }
-  const unique = Array.from(new Set(names)).sort()
+  const unique = sortCandidates(candidates.values())
   workspaceCache.set(workspaceFilePath, unique)
 
   // watch the workspace file for changes
   if (!fileWatchers.has(workspaceFilePath)) {
-    const stop = watchFiles(workspaceFilePath, {
+    const stop = watchFile(workspaceFilePath, {
       onChange: debounce(() => {
+        stopWatcher(getWorkspacePackageWatcherKey(workspaceFilePath as string))
         workspaceCache.delete(workspaceFilePath as string)
       }, 300),
       onDelete() {
+        stopWatcher(getWorkspacePackageWatcherKey(workspaceFilePath as string))
         workspaceCache.delete(workspaceFilePath as string)
         fileWatchers.delete(workspaceFilePath as string)
+        for (const [cacheRoot, filePath] of workspaceFilePaths) {
+          if (filePath === workspaceFilePath)
+            workspaceFilePaths.delete(cacheRoot)
+        }
         stop()
       },
     })
@@ -229,8 +300,14 @@ function parsePnpmWorkspace(yaml: string): string[] {
 }
 
 function matchDirsByGlobs(root: string, patterns: string[], max = 5000): string[] {
-  const regexes = patterns.map(globToRegex)
+  const includeRegexes = patterns
+    .filter(pattern => pattern && !pattern.startsWith('!'))
+    .map(globToRegex)
+  const excludeRegexes = patterns
+    .filter(pattern => pattern.startsWith('!'))
+    .map(pattern => globToRegex(pattern.slice(1)))
   const matched = new Set<string>()
+  const ignoredDirs = new Set(['.git', 'node_modules'])
   let visited = 0
 
   function walk(relDir: string) {
@@ -245,6 +322,8 @@ function matchDirsByGlobs(root: string, patterns: string[], max = 5000): string[
       return
     }
     for (const name of items) {
+      if (ignoredDirs.has(name))
+        continue
       const childRel = relDir ? path.join(relDir, name) : name
       const absChild = path.join(root, childRel)
       let stat
@@ -257,8 +336,12 @@ function matchDirsByGlobs(root: string, patterns: string[], max = 5000): string[
       if (stat.isDirectory()) {
         visited++
         // If this directory matches any pattern, collect it
-        if (regexes.some(r => r.test(childRel)))
+        if (
+          includeRegexes.some(regex => regex.test(childRel))
+          && !excludeRegexes.some(regex => regex.test(childRel))
+        ) {
           matched.add(childRel)
+        }
         walk(childRel)
       }
     }

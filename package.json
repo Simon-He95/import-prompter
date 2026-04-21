@@ -1,10 +1,10 @@
 {
   "publisher": "simonhe",
   "name": "import-prompter",
-  "displayName": "import-prompter",
+  "displayName": "Import Prompter",
   "version": "0.0.5",
   "packageManager": "pnpm@9.15.9",
-  "description": "import-prompter",
+  "description": "VS Code import autocomplete for package.json dependencies and pnpm workspace packages in JavaScript, TypeScript, React, Vue, Svelte, and Astro projects.",
   "author": "Simon He <https://github.com/Simon-He95>",
   "license": "MIT",
   "funding": "https://github.com/sponsors/Simon-He95",
@@ -19,11 +19,33 @@
   "sponsor": {
     "url": "https://github.com/Simon-He95/sponsor"
   },
+  "keywords": [
+    "import",
+    "autocomplete",
+    "intellisense",
+    "package.json",
+    "pnpm",
+    "workspace",
+    "monorepo",
+    "javascript",
+    "typescript",
+    "react",
+    "vue",
+    "svelte",
+    "astro"
+  ],
   "categories": [
+    "Snippets",
     "Other"
   ],
   "main": "./dist/index.mjs",
   "icon": "icon.png",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist",
+    "icon.png"
+  ],
   "engines": {
     "vscode": "^1.77.0"
   },
